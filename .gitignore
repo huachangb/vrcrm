@@ -1,2 +1,6 @@
 env/
 *__pycache__*
+data/lyrl
+data/scene
+data/tmc2007
+data/yeast
