@@ -3,6 +3,8 @@ from typing import List, Tuple
 import torch
 from sklearn import datasets
 
+from vrcrm.network import Policy
+
 
 def load_dataset(
         train_path: str,
@@ -28,3 +30,10 @@ def load_dataset(
     y_test = [torch.tensor(labels).to(device) for labels in y_test]
 
     return x_train, y_train, x_test, y_test
+
+
+def convert_supervised_to_bandit(
+        x_train: torch.Tensor, y_train: List[torch.Tensor], initial_policy: Policy
+    ) -> None:
+    pass
+
