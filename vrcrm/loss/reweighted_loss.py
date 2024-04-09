@@ -1,5 +1,3 @@
-from typing import Any, List
-
 import torch
 
 from vrcrm.network import Policy
@@ -10,23 +8,23 @@ def reweighted_loss(
         X: torch.Tensor,
         y: torch.Tensor,
         log_prop: torch.Tensor,
-        loss: torch.Tensor,
-        labels: List[Any]
+        loss: torch.Tensor
     ) -> torch.tensor:
     """
-    Computes reweighted loss
+    Computes reweighted loss. Assumes labels are drawn
+    i.i.d., so that p(y_1, ..., y_n | x) = P(y_1 | x) * ... * p(y_n | x)
 
     Parameters
-    -----------------------------------
-    :policy:
-    :X:
-    :y:
-    :log_prop:
-    :loss:
-    :labels:
+    :policy: policy to evaluate
+    :X: context matrix of shape [batch size, features]
+    :y: label matrix, where each row is a bitvector
+    :log_prop: log of propensity scores
+    :loss: feedback of actions
 
     Returns
-    -----------------------------------
     :loss: reweighted loss
     """
-    return 0
+    probs = policy(X)
+    probs = (probs * y).prod(dim=1)
+    loss = torch.mean((probs / log_prop) * loss)
+    return loss
