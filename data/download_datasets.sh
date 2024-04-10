@@ -13,5 +13,6 @@ download_from_cornell "yeast"
 download_from_cornell "scene"
 download_from_cornell "tmc2007"
 download_from_cornell "lyrl"
+mv lyrl rcv1_topics
 
 echo "Done"

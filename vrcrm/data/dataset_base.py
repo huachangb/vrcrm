@@ -13,7 +13,7 @@ import sklearn.datasets
 import sklearn.decomposition
 import sklearn.model_selection
 import sklearn.preprocessing
-
+import math
 
 
 class DatasetBase():
@@ -23,6 +23,7 @@ class DatasetBase():
             directory: str,
             label_subset: List[str] = None,
             reduce_dims: int = None,
+            initialize: bool = True,
             verbose: bool = False
         ) -> None:
         super().__init__()
@@ -34,6 +35,10 @@ class DatasetBase():
         self.validateLabels = None
         self.testFeatures = None
         self.testLabels = None
+        self.samples = None
+
+        if not initialize:
+            return
 
         self._load_dataset(dataset_name, directory, label_subset)
 
@@ -109,4 +114,34 @@ class DatasetBase():
         if self.verbose:
             print(f"SupervisedDataset: [Message] Created supervised split [n_train, n_validate]: [{np.shape(self.trainFeatures)[0]}, {np.shape(self.validateFeatures)[0]}]")
             sys.stdout.flush()
+
+    def generate_stream(self, subsampleFrac: float, replayCount: int, keep_samples: bool = False):
+        numSamples = np.shape(self.trainFeatures)[0]
+
+        # regenerate samples
+        if self.samples is None or not keep_samples:
+            self.samples = np.random.permutation(numSamples)
+
+        numSubsamples = int(math.ceil(subsampleFrac*numSamples))
+
+        sample_features = self.trainFeatures[self.samples, :][0:numSubsamples,:]
+        sample_labels = self.trainFeatures[self.samples, :][0:numSubsamples,:]
+
+        if self.verbose:
+            print("DataStream: [Message] Selected subsamples [n_subsamples, n_samples]: ", numSubsamples, numSamples)
+            sys.stdout.flush()
+
+        if replayCount <= 1:
+            return sample_features, sample_labels
+
+        replicator = np.ones((replayCount, 1))
+        repeatedFeatures = scipy.sparse.kron(replicator, sample_features, format='csr')
+        repeatedLabels = np.kron(replicator, sample_labels)
+
+        if self.verbose:
+            print("DataStream: [Message] Replay samples ", np.shape(repeatedFeatures)[0])
+            sys.stdout.flush()
+
+        return repeatedFeatures, repeatedLabels
+
 
