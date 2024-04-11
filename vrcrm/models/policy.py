@@ -3,7 +3,7 @@ from torch import nn
 
 
 class Policy(nn.Module):
-    def __init__(self, n_in: int, n1: int, n2: int, n3: int, n_out: int) -> None:
+    def __init__(self, n_in: int, n1: int, n2: int, n_out: int) -> None:
         super().__init__()
         self.layers = nn.Sequential(
             nn.Linear(n_in, n1),
@@ -12,10 +12,7 @@ class Policy(nn.Module):
             nn.Linear(n1, n2),
             nn.BatchNorm1d(n2),
             nn.ReLU(),
-            nn.Linear(n2, n3),
-            nn.BatchNorm1d(n3),
-            nn.ReLU(),
-            nn.Linear(n3, n_out),
+            nn.Linear(n2, n_out),
             nn.Sigmoid()
         )
 

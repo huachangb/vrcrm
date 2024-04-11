@@ -86,6 +86,8 @@ class MultiLabelEstimator(PRMEstimator):
         self.coef_ = numpy.reshape(self.coef_, (numFeatures, numLabels))
 
     def predict(self, X):
+        # how does this work?
+        # why the threshold >= 0?
         numSamples = numpy.shape(X)[0]
 
         WX = X.dot(self.coef_)
@@ -96,8 +98,12 @@ class MultiLabelEstimator(PRMEstimator):
         numSamples = numpy.shape(X)[0]
         numLabels = numpy.shape(Y)[1]
 
+        # X: [samples, features]
+        # coef_: [features, labels]
+        # WX: [samples, lables]
+        # Y: [samples, labels]
         WX = X.dot(self.coef_)
-        YSign = 1 - 2*Y
+        YSign = 1 - 2*Y # why is this different from the function below?
         YWX = numpy.multiply(WX, YSign)
         LossPerInstanceLabel = scipy.special.expit(YWX)
         marginal = LossPerInstanceLabel.sum(dtype = numpy.longdouble)

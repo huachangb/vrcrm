@@ -79,6 +79,7 @@ class Skylines:
         return avg_time
 
     def test(self):
+        # MAP Hamming loss
         predictedLabels = self.generatePredictions(self.labeler)
         numLabels = numpy.shape(self.dataset.testLabels)[1]
         predictionError = sklearn.metrics.hamming_loss(self.dataset.testLabels,
