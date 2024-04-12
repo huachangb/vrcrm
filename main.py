@@ -1,5 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
+import numpy as np
 
 from vrcrm.poem import DatasetReader, Skylines, Logger
 from vrcrm.poem_bridge.bandit_dataset import BanditDataset
@@ -67,7 +68,7 @@ for i in range(1):
     train(max_epoch=0, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy, Dnet_xy=discr, steps_fgan=10)
 
 
-    eval_features = supervised_dataset.testFeatures
+    eval_features = supervised_dataset.testFeatures.toarray().astype(np.float64)
     eval_features = torch.from_numpy(eval_features)
     eval_labels = supervised_dataset.testLabels
     eval_labels = torch.from_numpy(eval_labels)
