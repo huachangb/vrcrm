@@ -78,7 +78,9 @@ for i in range(1):
 
     train(max_epoch=1, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy, Dnet_xy=discr, steps_fgan=10)
 
-    exp_loss = expected_loss(policy, n_samples=32, X=nn_val_train_data.features.float(), labels=nn_val_train_data.labels)
-    maps = MAP(policy, X=nn_val_train_data.features.float(), labels=nn_val_train_data.labels)
+    eval_features = nn_val_train_data.features.float()
+    labels = nn_val_train_data.labels
+    exp_loss = expected_loss(policy, n_samples=32, X=eval_features, labels=labels)
+    maps = MAP(policy, X=eval_features, labels=labels)
     print("EXP ", exp_loss)
     print("MAP ", maps)
