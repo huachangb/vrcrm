@@ -62,8 +62,8 @@ for i in range(1):
     fgan_loader = DataLoader(nn_train_data, shuffle=True, batch_size=64)
 
     # train NN
-    policy = Policy(n_in=n_features, n1=15, n2=30, n_out=n_labels)
-    discr = T(n_features + 2 * n_labels)
+    policy = Policy(n_in=n_features, n1=15, n2=30, n_out=n_labels).to(float)
+    discr = T(n_features + 2 * n_labels).to(float)
 
     train(max_epoch=0, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy, Dnet_xy=discr, steps_fgan=10)
 
