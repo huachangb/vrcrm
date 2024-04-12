@@ -38,7 +38,7 @@ for i in range(1):
     features, labels = streamer.generateStream(subsampleFrac = 0.05, replayCount = 1)
 
     # create logger
-    logger = CRFLogger(n_labels=n_labels, loggerC = -1, stochasticMultiplier = 1, verbose = True)
+    logger = CRFLogger(n_labels=n_labels, loggerC = -1, verbose = True)
     logger.fit(features, labels)
     logger_map_scores.append(MAP(logger))
     logger_exp_scores.append(expected_loss(logger))

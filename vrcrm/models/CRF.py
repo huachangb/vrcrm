@@ -9,6 +9,7 @@ class CRF():
         self.verbose = verbose
         self.n_labels = n_labels
         self.predictors = []
+        self.tol =  1e-5
 
         # create models
         for _ in range(n_labels):
@@ -18,6 +19,12 @@ class CRF():
 
     def __call__(self, X) -> Any:
         return self.predict_proba(X)
+
+    def fit(self, X, y):
+        for i in range(self.n_labels):
+            labels = y[:, i]
+            self.predictors[i].fit(X, labels)
+
 
     def predict(self, X):
         predictedLabels = np.zeros((X.shape[0], self.n_labels), dtype = np.int16)
