@@ -94,6 +94,13 @@ class MultiLabelEstimator(PRMEstimator):
         predictions = (WX >= 0).astype(int)
         return predictions
 
+    def predict_proba(self, X):
+        numSamples = numpy.shape(X)[0]
+
+        WX = X.dot(self.coef_)
+        probs = scipy.special.expit(WX)
+        return probs
+
     def computeExpectedLoss(self, X, Y):
         numSamples = numpy.shape(X)[0]
         numLabels = numpy.shape(Y)[1]

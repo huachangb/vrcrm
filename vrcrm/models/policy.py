@@ -21,5 +21,5 @@ class Policy(nn.Module):
 
 
 if __name__=="__main__":
-    policy = Policy(10, 3, 5, 6, 3)
+    policy = Policy(10, 3, 6, 3)
 

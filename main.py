@@ -1,9 +1,12 @@
+from collections import defaultdict
+
 import torch
 from torch.utils.data import DataLoader
 import numpy as np
 
 from vrcrm.poem import DatasetReader, Skylines, Logger
 from vrcrm.poem_bridge.bandit_dataset import BanditDataset
+from vrcrm.poem_bridge.poem import PRMWrapperBackwardSupport as PRMWrapper
 from vrcrm.models import Policy, T
 from vrcrm.models.CRF import CRF
 from vrcrm.models.logger import CRFLogger
@@ -13,12 +16,10 @@ from vrcrm.inference.validate import expected_loss, MAP
 name = "scene"
 
 
-crf_scores = []
-crf_expected_scores = []
-logger_exp_scores = []
-logger_map_scores = []
+exp_scores = defaultdict(list)
+map_scores = defaultdict(list)
 
-crf_time = []
+EVAL_N_SAMPLES = 16
 
 
 
@@ -78,22 +79,69 @@ for i in range(1):
     eval_labels = torch.from_numpy(eval_labels)
 
     # evaluate logging policy
-    exp_loss = expected_loss(logger, n_samples=16, X=eval_features, labels=eval_labels)
+    exp_loss = expected_loss(logger, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
     maps = MAP(logger, X=eval_features, labels=eval_labels)
-    print("Logging policy")
-    print("EXP ", exp_loss)
-    print("MAP ", maps)
+    exp_scores["logging"].append(exp_loss)
+    map_scores["logging"].append(maps)
 
     # evaluate NN
-    exp_loss = expected_loss(policy, n_samples=16, X=eval_features, labels=eval_labels)
+    exp_loss = expected_loss(policy, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
     maps = MAP(policy, X=eval_features, labels=eval_labels)
-    print("NN")
-    print("EXP ", exp_loss)
-    print("MAP ", maps)
+    exp_scores["nn-noreg"].append(exp_loss)
+    map_scores["nn-noreg"].append(maps)
 
     # evaluate CRF
-    exp_loss = expected_loss(crf, n_samples=16, X=eval_features, labels=eval_labels)
+    exp_loss = expected_loss(crf, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
     maps = MAP(crf, X=eval_features, labels=eval_labels)
-    print("CRF")
-    print("EXP ", exp_loss)
-    print("MAP ", maps)
+    exp_scores["crf"].append(exp_loss)
+    map_scores["crf"].append(maps)
+
+    prm = PRMWrapper(bandit_dataset, n_iter = 1000, tol = 1e-6, minC = 0, maxC = -1, minV = -6, maxV = 0,
+                                        minClip = 0, maxClip = 0, estimator_type = 'Vanilla', verbose = True,
+                                        parallel = None, smartStart = None)
+    exp_loss = expected_loss(prm, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
+    maps = MAP(prm, X=eval_features, labels=eval_labels)
+    exp_scores["prm"].append(exp_loss)
+    map_scores["prm"].append(maps)
+    prm.freeAuxiliaryMatrices()
+    del prm
+
+    erm = PRMWrapper(bandit_dataset, n_iter = 1000, tol = 1e-6, minC = 0, maxC = -1, minV = 0, maxV = -1,
+                                minClip = 0, maxClip = 0, estimator_type = 'Vanilla', verbose = True,
+                                parallel = None, smartStart = None)
+    erm.calibrateHyperParams()
+    erm.validate()
+    exp_loss = expected_loss(erm, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
+    maps = MAP(erm, X=eval_features, labels=eval_labels)
+    exp_scores["erm"].append(exp_loss)
+    map_scores["erm"].append(maps)
+
+    erm.freeAuxiliaryMatrices()
+    del erm
+
+    maj = PRMWrapper(bandit_dataset, n_iter = 1000, tol = 1e-6, minC = 0, maxC = -1, minV = -6, maxV = 0,
+                                minClip = 0, maxClip = 0, estimator_type = 'Stochastic', verbose = True,
+                                parallel = None, smartStart = None)
+    maj.calibrateHyperParams()
+    maj.validate()
+    exp_loss = expected_loss(maj, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
+    maps = MAP(maj, X=eval_features, labels=eval_labels)
+    exp_scores["maj"].append(exp_loss)
+    map_scores["maj"].append(maps)
+
+    maj.freeAuxiliaryMatrices()
+    del maj
+
+    majerm = PRMWrapper(bandit_dataset, n_iter = 1000, tol = 1e-6, minC = 0, maxC = -1, minV = 0, maxV = -1,
+                                minClip = 0, maxClip = 0, estimator_type = 'Stochastic', verbose = True,
+                                parallel = None, smartStart = None)
+    majerm.calibrateHyperParams()
+    majerm.validate()
+    exp_loss = expected_loss(majerm, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
+    maps = MAP(majerm, X=eval_features, labels=eval_labels)
+    exp_scores["majerm"].append(exp_loss)
+    map_scores["majerm"].append(maps)
+
+
+for model in exp_scores.keys():
+    print(f"model\n\tEXP: {np.mean(exp_scores[model]):.3f}\n\tMAP: {np.mean(map_scores[model]):.3f}")
