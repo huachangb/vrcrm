@@ -70,7 +70,7 @@ for i in range(1):
     train(max_epoch=0, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy, Dnet_xy=discr, steps_fgan=10)
 
     # train CRF
-    crf = CRF(n_labels=n_labels, verbose=False)
+    crf = CRF(n_labels=n_labels, loggerC=0.1, verbose=False)
     crf.fit(supervised_dataset.trainFeatures, supervised_dataset.trainLabels)
 
     eval_features = supervised_dataset.testFeatures.toarray().astype(np.float32)
@@ -99,6 +99,8 @@ for i in range(1):
     prm = PRMWrapper(bandit_dataset, n_iter = 1000, tol = 1e-6, minC = 0, maxC = -1, minV = -6, maxV = 0,
                                         minClip = 0, maxClip = 0, estimator_type = 'Vanilla', verbose = True,
                                         parallel = None, smartStart = None)
+    prm.calibrateHyperParams()
+    prm.validate()
     exp_loss = expected_loss(prm, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
     maps = MAP(prm, X=eval_features, labels=eval_labels)
     exp_scores["prm"].append(exp_loss)
