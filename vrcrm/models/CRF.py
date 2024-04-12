@@ -10,12 +10,10 @@ class CRF():
         self.verbose = verbose
         self.n_labels = n_labels
         self.predictors = []
-        self.tol =  1e-5
 
         # create models
         for _ in range(n_labels):
-            predictor = LogisticRegression(solver="liblinear", C = loggerC,
-                    penalty = 'l2', tol = self.tol, dual = True, fit_intercept = False)
+            predictor = LogisticRegression(solver="liblinear", C = loggerC, penalty = 'l2', tol = 1e-5, dual = True, fit_intercept = False)
             self.predictors.append(predictor)
 
     def __call__(self, X, as_tensor: bool = True) -> Any:

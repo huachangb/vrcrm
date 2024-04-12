@@ -10,8 +10,9 @@ def expected_loss(model: Policy, n_samples: int, X, labels):
     mask = torch.rand(n_samples, *probs.shape) # [n_samples, n, labels]
     samples = mask <= probs # [n_samples, n, labels]
     samples = samples.int()
-    correct = (samples != labels).sum()
-    return correct / (X.shape[0] * n_samples)
+    hamming_loss = (samples != labels).sum(dim=2) # [n_samples, n]
+    avg_hamming_loss = hamming_loss.float().mean(dim=0) # [n]
+    return avg_hamming_loss.mean()
 
 
 def MAP(model: Policy, X, labels):

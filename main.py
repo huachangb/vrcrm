@@ -5,6 +5,7 @@ import numpy as np
 from vrcrm.poem import DatasetReader, Skylines, Logger
 from vrcrm.poem_bridge.bandit_dataset import BanditDataset
 from vrcrm.models import Policy, T
+from vrcrm.models.CRF import CRF
 from vrcrm.models.logger import CRFLogger
 from vrcrm.inference.train import train
 from vrcrm.inference.validate import expected_loss, MAP
@@ -62,27 +63,37 @@ for i in range(1):
     fgan_loader = DataLoader(nn_train_data, shuffle=True, batch_size=64)
 
     # train NN
-    policy = Policy(n_in=n_features, n1=15, n2=30, n_out=n_labels).to(float)
-    discr = T(n_features + 2 * n_labels).to(float)
+    policy = Policy(n_in=n_features, n1=15, n2=30, n_out=n_labels).to(torch.float32)
+    discr = T(n_features + 2 * n_labels).to(torch.float32)
 
     train(max_epoch=0, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy, Dnet_xy=discr, steps_fgan=10)
 
+    # train CRF
+    crf = CRF(n_labels=n_labels, verbose=False)
+    crf.fit(supervised_dataset.trainFeatures, supervised_dataset.trainLabels)
 
-    eval_features = supervised_dataset.testFeatures.toarray().astype(np.float64)
+    eval_features = supervised_dataset.testFeatures.toarray().astype(np.float32)
     eval_features = torch.from_numpy(eval_features)
     eval_labels = supervised_dataset.testLabels
     eval_labels = torch.from_numpy(eval_labels)
 
     # evaluate logging policy
-    exp_loss = expected_loss(logger, n_samples=32, X=eval_features, labels=eval_labels)
+    exp_loss = expected_loss(logger, n_samples=16, X=eval_features, labels=eval_labels)
     maps = MAP(logger, X=eval_features, labels=eval_labels)
     print("Logging policy")
     print("EXP ", exp_loss)
     print("MAP ", maps)
 
     # evaluate NN
-    exp_loss = expected_loss(policy, n_samples=32, X=eval_features, labels=eval_labels)
+    exp_loss = expected_loss(policy, n_samples=16, X=eval_features, labels=eval_labels)
     maps = MAP(policy, X=eval_features, labels=eval_labels)
     print("NN")
+    print("EXP ", exp_loss)
+    print("MAP ", maps)
+
+    # evaluate CRF
+    exp_loss = expected_loss(crf, n_samples=16, X=eval_features, labels=eval_labels)
+    maps = MAP(crf, X=eval_features, labels=eval_labels)
+    print("CRF")
     print("EXP ", exp_loss)
     print("MAP ", maps)
