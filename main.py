@@ -1,8 +1,8 @@
 import torch
 from torch.utils.data import DataLoader
 
-from poem import DatasetReader, Skylines, Logger
-from poem_bridge.bandit_dataset import BanditDataset
+from vrcrm.poem import DatasetReader, Skylines, Logger
+from vrcrm.poem_bridge.bandit_dataset import BanditDataset
 from vrcrm.models import Policy, T
 from vrcrm.inference.train import train
 from vrcrm.inference.validate import expected_loss, MAP

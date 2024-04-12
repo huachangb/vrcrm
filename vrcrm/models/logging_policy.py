@@ -1,17 +1,52 @@
-import DatasetReader
-import math
-import numpy
-import numpy.random
-import scipy.sparse
-import Skylines
+import numpy as np
 import sys
 
-from vrcrm.data import DatasetBase
+from vrcrm.poem import Skylines
 
 
 class LoggingPolicy():
-    def __init__(self, dataset: DatasetBase, loggerC: int, stochasticMultiplier: float, verbose: bool) -> None:
+    def __init__(self, verbose: bool) -> None:
         self.verbose = verbose
+        self.model = None
+
+    def generateLog(self, dataset):
+        numSamples, _ = np.shape(dataset.trainFeatures)
+        numLabels = np.shape(dataset.trainLabels)[1]
+
+        sampledLabels = np.zeros((numSamples, numLabels), dtype = np.int16)
+        logpropensity = np.zeros(numSamples, dtype = np.float64)
+
+        for i in range(numLabels):
+            if self.crf.labeler[i] is not None:
+                regressor = self.crf.labeler[i]
+                predictedProbabilities = regressor.predict_log_proba(dataset.trainFeatures)
+
+                randomThresholds = np.log(np.random.rand(numSamples).astype(np.float64))
+                sampledLabel = randomThresholds > predictedProbabilities[:,0]
+                sampledLabels[:, i] = sampledLabel.astype(int)
+
+                probSampledLabel = np.zeros(numSamples, dtype=np.longdouble)
+                probSampledLabel[sampledLabel] = predictedProbabilities[sampledLabel, 1]
+                remainingLabel = np.logical_not(sampledLabel)
+                probSampledLabel[remainingLabel] = predictedProbabilities[remainingLabel, 0]
+                logpropensity = logpropensity + probSampledLabel
+
+        diffLabels = sampledLabels != dataset.trainLabels
+        sampledLoss = diffLabels.sum(axis = 1, dtype = np.longdouble) - numLabels
+
+        if self.verbose:
+            averageSampledLoss = sampledLoss.mean(dtype = np.longdouble)
+            print("Logger: [Message] Sampled historical logs. [Mean train loss, numSamples]:", averageSampledLoss, np.shape(sampledLabels)[0])
+            print("Logger: [Message] [min, max, mean] inv propensity", logpropensity.min(), logpropensity.max(), logpropensity.mean())
+            sys.stdout.flush()
+
+        return sampledLabels, logpropensity, sampledLoss
+
+
+
+class CRFLogger():
+    def __init__(self, dataset, loggerC, stochasticMultiplier, verbose) -> None:
+        super().__init__(verbose=verbose)
         crf = Skylines.CRF(dataset = dataset, tol = 1e-5, minC = loggerC, maxC = loggerC, verbose = self.verbose, parallel = True)
         crf.Name = "LoggerCRF"
         crf.validate()
@@ -25,37 +60,3 @@ class LoggingPolicy():
         if self.verbose:
             print("Logger: [Message] Trained logger crf. Weight-scale: ", stochasticMultiplier)
             sys.stdout.flush()
-
-    def generateLog(self, dataset):
-        numSamples, _ = numpy.shape(dataset.trainFeatures)
-        numLabels = numpy.shape(dataset.trainLabels)[1]
-
-        sampledLabels = numpy.zeros((numSamples, numLabels), dtype = numpy.int16)
-        logpropensity = numpy.zeros(numSamples, dtype = numpy.float64)
-
-        for i in range(numLabels):
-            if self.crf.labeler[i] is not None:
-                regressor = self.crf.labeler[i]
-                predictedProbabilities = regressor.predict_log_proba(dataset.trainFeatures)
-
-                randomThresholds = numpy.log(numpy.random.rand(numSamples).astype(numpy.float64))
-                sampledLabel = randomThresholds > predictedProbabilities[:,0]
-                sampledLabels[:, i] = sampledLabel.astype(int)
-
-                probSampledLabel = numpy.zeros(numSamples, dtype=numpy.longdouble)
-                probSampledLabel[sampledLabel] = predictedProbabilities[sampledLabel, 1]
-                remainingLabel = numpy.logical_not(sampledLabel)
-                probSampledLabel[remainingLabel] = predictedProbabilities[remainingLabel, 0]
-                logpropensity = logpropensity + probSampledLabel
-
-        diffLabels = sampledLabels != dataset.trainLabels
-        sampledLoss = diffLabels.sum(axis = 1, dtype = numpy.longdouble) - numLabels
-
-        if self.verbose:
-            averageSampledLoss = sampledLoss.mean(dtype = numpy.longdouble)
-            print("Logger: [Message] Sampled historical logs. [Mean train loss, numSamples]:", averageSampledLoss, numpy.shape(sampledLabels)[0])
-            print("Logger: [Message] [min, max, mean] inv propensity", logpropensity.min(), logpropensity.max(), logpropensity.mean())
-            sys.stdout.flush()
-
-        return sampledLabels, logpropensity, sampledLoss
-
