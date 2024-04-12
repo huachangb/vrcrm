@@ -38,11 +38,9 @@ for i in range(1):
     features, labels = streamer.generateStream(subsampleFrac = 0.05, replayCount = 1)
 
     # create logger
-    logger = CRFLogger(n_labels=n_labels, loggerC = -1, verbose = True)
+    # loggerC is -1 in original code, but gets converted to 0.1
+    logger = CRFLogger(n_labels=n_labels, loggerC = 0.1, verbose = True)
     logger.fit(features, labels)
-    logger_map_scores.append(MAP(logger))
-    logger_exp_scores.append(expected_loss(logger))
-    print()
 
     # create bandit dataset
     replayed_dataset = DatasetReader.DatasetReader(copy_dataset = dataset, verbose = True)
@@ -66,11 +64,12 @@ for i in range(1):
     policy = Policy(n_in=n_features, n1=15, n2=30, n_out=n_labels)
     discr = T(n_features + 2 * n_labels)
 
-    train(max_epoch=1, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy, Dnet_xy=discr, steps_fgan=10)
+    train(max_epoch=0, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy, Dnet_xy=discr, steps_fgan=10)
 
-    eval_features = nn_val_train_data.features.float()
+
+    eval_features = supervised_dataset.testFeatures
     eval_features = torch.from_numpy(eval_features)
-    eval_labels = nn_val_train_data.labels.int()
+    eval_labels = supervised_dataset.testLabels
     eval_labels = torch.from_numpy(eval_labels)
 
     # evaluate logging policy

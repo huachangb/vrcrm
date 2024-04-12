@@ -1,5 +1,6 @@
 from typing import Any
 
+import torch
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 
@@ -17,8 +18,13 @@ class CRF():
                     penalty = 'l2', tol = self.tol, dual = True, fit_intercept = False)
             self.predictors.append(predictor)
 
-    def __call__(self, X) -> Any:
-        return self.predict_proba(X)
+    def __call__(self, X, as_tensor: bool = True) -> Any:
+        probs = self.predict_proba(X)
+
+        if as_tensor:
+            probs = torch.from_numpy(probs)
+
+        return probs
 
     def fit(self, X, y):
         for i in range(self.n_labels):
