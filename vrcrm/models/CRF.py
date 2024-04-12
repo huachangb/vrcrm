@@ -34,17 +34,22 @@ class CRF():
         predictedLabels = np.zeros((X.shape[0], self.n_labels), dtype = np.int16)
 
         for i in range(self.n_labels):
-            if self.predictors[i] is not None:
-                predictedLabels[:,i] = self.predictors[i].predict(X)
+            predictedLabels[:,i] = self.predictors[i].predict(X)
 
         return predictedLabels
 
     def predict_proba(self, X):
-        predictedLabels = np.zeros((X.shape[0], self.n_labels), dtype = np.int16)
+        predictedLabels = np.zeros((X.shape[0], self.n_labels), dtype = np.float32)
 
         for i in range(self.n_labels):
-            if self.predictors[i] is not None:
-                probs = self.predictors[i].predict_proba(X)
-                predictedLabels[:,i] = probs[:, 1]
+            probs = self.predictors[i].predict_proba(X)
+            predictedLabels[:,i] = probs[:, 1]
 
         return predictedLabels
+
+if __name__=="__main__":
+    X = np.random.rand(100, 30)
+    y = (np.random.rand(100, 5) > 0.5).astype(int)
+    model = CRF(5, 0.1, False)
+    model.fit(X, y)
+    print(model(X))
