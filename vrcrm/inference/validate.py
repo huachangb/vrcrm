@@ -17,7 +17,7 @@ def expected_loss(model: Policy, n_samples: int, X, labels):
 def MAP(model: Policy, X, labels):
     probs = model(X) # [n, labels]
     map_predictions = (probs >= 0.5).int()
-    avg_hamming_loss = (map_predictions == labels).sum(dim=1).mean()
+    avg_hamming_loss = (map_predictions == labels).sum(dim=1).float().mean()
     return avg_hamming_loss
 
 

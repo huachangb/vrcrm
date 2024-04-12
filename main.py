@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 from vrcrm.poem import DatasetReader, Skylines, Logger
 from vrcrm.poem_bridge.bandit_dataset import BanditDataset
 from vrcrm.models import Policy, T
+from vrcrm.models.logger import CRFLogger
 from vrcrm.inference.train import train
 from vrcrm.inference.validate import expected_loss, MAP
 
@@ -12,7 +13,7 @@ name = "scene"
 
 crf_scores = []
 crf_expected_scores = []
-logger_scores = []
+logger_exp_scores = []
 logger_map_scores = []
 
 crf_time = []
@@ -33,33 +34,22 @@ for i in range(1):
     supervised_dataset = DatasetReader.SupervisedDataset(dataset = dataset, verbose = True)
     supervised_dataset.createTrainValidateSplit(validateFrac = 0.25)
 
-    # CRF
-    # crf = Skylines.CRF(dataset = supervised_dataset, tol = 1e-6, minC = -2, maxC = 2, verbose = True, parallel = None)
-    # crf_time.append(crf.validate())
-    # crf_scores.append(crf.test())
-    # crf_expected_scores.append(crf.expectedTestLoss())
-
-    supervised_dataset.freeAuxiliaryMatrices()
-    del supervised_dataset
-
     streamer = Logger.DataStream(dataset = dataset, verbose = True)
     features, labels = streamer.generateStream(subsampleFrac = 0.05, replayCount = 1)
 
-    subsampled_dataset = DatasetReader.DatasetReader(copy_dataset = dataset, verbose = True)
-    subsampled_dataset.trainFeatures = features
-    subsampled_dataset.trainLabels = labels
-    logger = Logger.Logger(subsampled_dataset, loggerC = -1, stochasticMultiplier = 1, verbose = True)
-    logger_map_scores.append(logger.crf.test())
-    logger_scores.append(logger.crf.expectedTestLoss())
+    # create logger
+    logger = CRFLogger(n_labels=n_labels, loggerC = -1, stochasticMultiplier = 1, verbose = True)
+    logger.fit(features, labels)
+    logger_map_scores.append(MAP(logger))
+    logger_exp_scores.append(expected_loss(logger))
+    print()
 
+    # create bandit dataset
     replayed_dataset = DatasetReader.DatasetReader(copy_dataset = dataset, verbose = True)
-
     features, labels = streamer.generateStream(subsampleFrac = 1.0, replayCount = 4)
     replayed_dataset.trainFeatures = features
     replayed_dataset.trainLabels = labels
-
-    sampledLabels, sampledLogPropensity, sampledLoss = logger.generateLog(replayed_dataset)
-
+    sampledLabels, sampledLogPropensity, sampledLoss = logger.generateLog(features, labels)
     bandit_dataset = DatasetReader.BanditDataset(dataset = replayed_dataset, verbose = True)
 
     replayed_dataset.freeAuxiliaryMatrices()
@@ -79,8 +69,20 @@ for i in range(1):
     train(max_epoch=1, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy, Dnet_xy=discr, steps_fgan=10)
 
     eval_features = nn_val_train_data.features.float()
-    labels = nn_val_train_data.labels
-    exp_loss = expected_loss(policy, n_samples=32, X=eval_features, labels=labels)
-    maps = MAP(policy, X=eval_features, labels=labels)
+    eval_features = torch.from_numpy(eval_features)
+    eval_labels = nn_val_train_data.labels.int()
+    eval_labels = torch.from_numpy(eval_labels)
+
+    # evaluate logging policy
+    exp_loss = expected_loss(logger, n_samples=32, X=eval_features, labels=eval_labels)
+    maps = MAP(logger, X=eval_features, labels=eval_labels)
+    print("Logging policy")
+    print("EXP ", exp_loss)
+    print("MAP ", maps)
+
+    # evaluate NN
+    exp_loss = expected_loss(policy, n_samples=32, X=eval_features, labels=eval_labels)
+    maps = MAP(policy, X=eval_features, labels=eval_labels)
+    print("NN")
     print("EXP ", exp_loss)
     print("MAP ", maps)
