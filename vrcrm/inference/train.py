@@ -24,19 +24,14 @@ def train(
         for ele in bandit_train_loader:
             X, s_labels, s_log_prop, s_loss, y = ele
             y = y.long()
-            X = X.to(device)
-            s_labels = s_labels.to(device)
-            s_log_prop = s_labels.to(device)
-            s_loss = s_loss.to(device)
-            y = y.to(device)
 
             # Convert data to Torch Variable format
-            idx = Variable(torch.LongTensor(y))
-            X = Variable(X.type(torch.FloatTensor), requires_grad = False)
-            s_labels = Variable(s_labels.type(torch.FloatTensor))
-            s_log_prop = Variable(s_log_prop.type(torch.FloatTensor))
-            s_loss = Variable(s_loss.type(torch.FloatTensor))
-            y = Variable(y)
+            # idx = Variable(torch.LongTensor(y))
+            # X = Variable(X.type(torch.FloatTensor), requires_grad = False)
+            # s_labels = Variable(s_labels.type(torch.FloatTensor))
+            # s_log_prop = Variable(s_log_prop.type(torch.FloatTensor))
+            # s_loss = Variable(s_loss.type(torch.FloatTensor))
+            # y = Variable(y)
 
             opt_h.zero_grad()
             hnet.train()
@@ -79,11 +74,11 @@ def train(
                     s_loss = s_loss.to(device)
                     y = y.to(device)
 
-                    X = Variable(X.type(torch.FloatTensor), requires_grad=False)
-                    s_labels = Variable(s_labels.type(torch.FloatTensor))
-                    s_log_prop = Variable(s_log_prop.type(torch.FloatTensor))
-                    s_loss = Variable(s_loss.type(torch.FloatTensor))
-                    y = Variable(y.type(torch.FloatTensor))
+                    # X = Variable(X.type(torch.FloatTensor), requires_grad=False)
+                    # s_labels = Variable(s_labels.type(torch.FloatTensor))
+                    # s_log_prop = Variable(s_log_prop.type(torch.FloatTensor))
+                    # s_loss = Variable(s_loss.type(torch.FloatTensor))
+                    # y = Variable(y.type(torch.FloatTensor))
                     # y: [bs, n_labels]
 
                     prob = hnet(X)

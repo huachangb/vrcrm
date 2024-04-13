@@ -120,7 +120,7 @@ for i in range(1):
 
 
             train(max_epoch=0, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy,
-                  Dnet_xy=discr, steps_fgan=10, is_gumbel_hard=False, is_cuda=USING_CUDA)
+                  Dnet_xy=discr, steps_fgan=10, is_gumbel_hard=False, device=device)
 
             # evaluate NN
             policy = policy.cpu()
