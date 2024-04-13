@@ -1,1 +1,1 @@
-from .reweighted_loss import reweighted_loss
+from .validate import expected_loss, MAP_loss

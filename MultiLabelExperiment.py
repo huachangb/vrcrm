@@ -1,8 +1,14 @@
 import sys
 
-from poem import DatasetReader, Skylines, Logger, PRM, PDTTest
+from vrcrm.poem import DatasetReader, Skylines, Logger, PRM, PDTTest
 
 import numpy
+
+import warnings
+from sklearn.exceptions import ConvergenceWarning
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.simplefilter("ignore", category=ConvergenceWarning)
 
 
 
@@ -12,8 +18,8 @@ if __name__ == '__main__':
          import pathos.multiprocessing as mp
          pool = mp.ProcessingPool(7)
 
-    for name in ['scene']:#, 'yeast', 'tmc2007', 'rcv1_topics']:
-        dataset = DatasetReader.DatasetReader(copy_dataset = None, verbose = True)
+    for name in ['yeast']:#, 'yeast', 'tmc2007', 'rcv1_topics']:
+        dataset = DatasetReader.DatasetReader(copy_dataset = None, verbose = False)
         if name == 'rcv1_topics':
             dataset.loadDataset(corpusName = name, labelSubset = [33, 59, 70, 102])
         else:
@@ -41,10 +47,10 @@ if __name__ == '__main__':
         for run in range(1):
             print("************************RUN ", run)
 
-            supervised_dataset = DatasetReader.SupervisedDataset(dataset = dataset, verbose = True)
+            supervised_dataset = DatasetReader.SupervisedDataset(dataset = dataset, verbose = False)
             supervised_dataset.createTrainValidateSplit(validateFrac = 0.25)
 
-            crf = Skylines.CRF(dataset = supervised_dataset, tol = 1e-6, minC = -2, maxC = 2, verbose = True, parallel = pool)
+            crf = Skylines.CRF(dataset = supervised_dataset, tol = 1e-6, minC = -2, maxC = 2, verbose = False, parallel = pool)
             crf_time.append(crf.validate())
             crf_scores.append(crf.test())
             crf_expected_scores.append(crf.expectedTestLoss())
@@ -52,25 +58,29 @@ if __name__ == '__main__':
             supervised_dataset.freeAuxiliaryMatrices()
             del supervised_dataset
 
-            streamer = Logger.DataStream(dataset = dataset, verbose = True)
+            streamer = Logger.DataStream(dataset = dataset, verbose = False)
             features, labels = streamer.generateStream(subsampleFrac = 0.05, replayCount = 1)
 
-            subsampled_dataset = DatasetReader.DatasetReader(copy_dataset = dataset, verbose = True)
+            subsampled_dataset = DatasetReader.DatasetReader(copy_dataset = dataset, verbose = False)
             subsampled_dataset.trainFeatures = features
             subsampled_dataset.trainLabels = labels
-            logger = Logger.Logger(subsampled_dataset, loggerC = -1, stochasticMultiplier = 1, verbose = True)
+            logger = Logger.Logger(subsampled_dataset, loggerC = -1, stochasticMultiplier = 1, verbose = False)
             logger_map_scores.append(logger.crf.test())
             logger_scores.append(logger.crf.expectedTestLoss())
 
-            replayed_dataset = DatasetReader.DatasetReader(copy_dataset = dataset, verbose = True)
+            replayed_dataset = DatasetReader.DatasetReader(copy_dataset = dataset, verbose = False)
 
             features, labels = streamer.generateStream(subsampleFrac = 1.0, replayCount = 4)
             replayed_dataset.trainFeatures = features
             replayed_dataset.trainLabels = labels
 
             sampledLabels, sampledLogPropensity, sampledLoss = logger.generateLog(replayed_dataset)
+            # print("Sampled labels")
+            # print(sampledLabels)
+            # print("Train labels")
+            # print(replayed_dataset.trainLabels)
 
-            bandit_dataset = DatasetReader.BanditDataset(dataset = replayed_dataset, verbose = True)
+            bandit_dataset = DatasetReader.BanditDataset(dataset = replayed_dataset, verbose = False)
 
             replayed_dataset.freeAuxiliaryMatrices()
             del replayed_dataset
@@ -84,7 +94,7 @@ if __name__ == '__main__':
             del logger
 
             prm = Skylines.PRMWrapper(bandit_dataset, n_iter = 1000, tol = 1e-6, minC = 0, maxC = -1, minV = -6, maxV = 0,
-                                        minClip = 0, maxClip = 0, estimator_type = 'Vanilla', verbose = True,
+                                        minClip = 0, maxClip = 0, estimator_type = 'Vanilla', verbose = False,
                                         parallel = pool, smartStart = coef)
             prm.calibrateHyperParams()
             prm_time.append(prm.validate())
@@ -95,7 +105,7 @@ if __name__ == '__main__':
             del prm
 
             erm = Skylines.PRMWrapper(bandit_dataset, n_iter = 1000, tol = 1e-6, minC = 0, maxC = -1, minV = 0, maxV = -1,
-                                        minClip = 0, maxClip = 0, estimator_type = 'Vanilla', verbose = True,
+                                        minClip = 0, maxClip = 0, estimator_type = 'Vanilla', verbose = False,
                                         parallel = None, smartStart = coef)
             erm.calibrateHyperParams()
             erm_time.append(erm.validate())
@@ -106,7 +116,7 @@ if __name__ == '__main__':
             del erm
 
             maj = Skylines.PRMWrapper(bandit_dataset, n_iter = 1000, tol = 1e-6, minC = 0, maxC = -1, minV = -6, maxV = 0,
-                                        minClip = 0, maxClip = 0, estimator_type = 'Stochastic', verbose = True,
+                                        minClip = 0, maxClip = 0, estimator_type = 'Stochastic', verbose = False,
                                         parallel = pool, smartStart = coef)
             maj.calibrateHyperParams()
             poem_time.append(maj.validate())
@@ -117,7 +127,7 @@ if __name__ == '__main__':
             del maj
 
             majerm = Skylines.PRMWrapper(bandit_dataset, n_iter = 1000, tol = 1e-6, minC = 0, maxC = -1, minV = 0, maxV = -1,
-                                        minClip = 0, maxClip = 0, estimator_type = 'Stochastic', verbose = True,
+                                        minClip = 0, maxClip = 0, estimator_type = 'Stochastic', verbose = False,
                                         parallel = None, smartStart = coef)
             majerm.calibrateHyperParams()
             ermstoch_time.append(majerm.validate())

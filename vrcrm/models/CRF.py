@@ -6,14 +6,14 @@ from sklearn.linear_model import LogisticRegression
 
 
 class CRF():
-    def __init__(self, n_labels: int, loggerC: float, verbose: bool) -> None:
+    def __init__(self, n_labels: int, C: float, verbose: bool) -> None:
         self.verbose = verbose
         self.n_labels = n_labels
         self.predictors = []
 
         # create models
         for _ in range(n_labels):
-            predictor = LogisticRegression(solver="liblinear", C = loggerC, penalty = 'l2', tol = 1e-5, dual = True, fit_intercept = False)
+            predictor = LogisticRegression(solver="liblinear", C = C, penalty = 'l2', tol = 1e-5, dual = True, fit_intercept = False)
             self.predictors.append(predictor)
 
     def __call__(self, X, as_tensor: bool = True) -> Any:

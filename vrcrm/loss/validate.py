@@ -1,9 +1,7 @@
 import torch
-import torch.nn.functional as F
-from torch.distributions.categorical import Categorical
 
 from ..models import Policy
-from ..gumbel.gumbel_multilabel import gumbel_softmax
+
 
 def expected_loss(model: Policy, n_samples: int, X, labels):
     probs = model(X) # [n, labels]
@@ -15,10 +13,10 @@ def expected_loss(model: Policy, n_samples: int, X, labels):
     return avg_hamming_loss.mean()
 
 
-def MAP(model: Policy, X, labels):
+def MAP_loss(model: Policy, X, labels):
     probs = model(X) # [n, labels]
     map_predictions = (probs >= 0.5).int()
-    avg_hamming_loss = (map_predictions != labels).sum(dim=1).float().mean()
+    avg_hamming_loss = (map_predictions != labels).sum() / X.shape[0]
     return avg_hamming_loss
 
 

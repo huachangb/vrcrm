@@ -81,6 +81,7 @@ class Skylines:
     def test(self):
         # MAP Hamming loss
         predictedLabels = self.generatePredictions(self.labeler)
+        # print(predictedLabels)
         numLabels = numpy.shape(self.dataset.testLabels)[1]
         predictionError = sklearn.metrics.hamming_loss(self.dataset.testLabels,
             predictedLabels) * numLabels

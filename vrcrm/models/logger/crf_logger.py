@@ -7,9 +7,9 @@ from vrcrm.models.logger.logging_policy import LoggingPolicy
 
 
 class CRFLogger(LoggingPolicy, CRF):
-    def __init__(self, n_labels, loggerC, verbose) -> None:
+    def __init__(self, n_labels, C, verbose) -> None:
         LoggingPolicy.__init__(self, verbose=verbose)
-        CRF.__init__(self, n_labels=n_labels,loggerC=loggerC, verbose=verbose)
+        CRF.__init__(self, n_labels=n_labels, C=C, verbose=verbose)
 
     def generateLog(self, X, labels):
         numSamples, _ = np.shape(X)
