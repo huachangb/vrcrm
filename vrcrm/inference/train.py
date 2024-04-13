@@ -13,14 +13,14 @@ def train(
         fgan_loader: DataLoader, hnet: Policy, Dnet_xy: T,
         steps_fgan: int, device,
         is_gumbel_hard: bool = False,
-        opt_h=None
+        opts=None
         ) -> None:
     is_cuda = device.type == "cuda"
-
+    opt_h, opt_h2, opt_d = opts
     # make optimizers
     # opt_h = torch.optim.Adam(params=hnet.parameters(), lr=0.001)
-    opt_h2 = torch.optim.Adam(params=hnet.parameters(), lr=0.001)
-    opt_d = torch.optim.Adam(params=Dnet_xy.parameters(), lr=0.01)
+    # opt_h2 = torch.optim.Adam(params=hnet.parameters(), lr=0.001)
+    # opt_d = torch.optim.Adam(params=Dnet_xy.parameters(), lr=0.01)
 
     for epoch in tqdm(range(max_epoch)):
         for ele in bandit_train_loader:
@@ -31,7 +31,7 @@ def train(
             s_labels = s_labels.to(device)
             s_log_prop = s_log_prop.to(device)
             s_loss = s_loss.to(device)
-            y = y.to(device)
+            y = y.to(torch.int64).to(device)
 
             # Convert data to Torch Variable format
             # idx = Variable(torch.LongTensor(y))
