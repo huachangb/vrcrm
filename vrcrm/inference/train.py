@@ -25,9 +25,9 @@ def train(
     for epoch in tqdm(range(max_epoch)):
         for ele in bandit_train_loader:
             X, s_labels, s_log_prop, s_loss, y = ele
-            y = y.long()
+            # y = y.long()
 
-            X = X.to(device)
+            X = X.float().to(device)
             s_labels = s_labels.to(device)
             s_log_prop = s_log_prop.to(device)
             s_loss = s_loss.to(device)

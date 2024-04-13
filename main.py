@@ -19,7 +19,7 @@ from sklearn.exceptions import ConvergenceWarning
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.simplefilter("ignore", category=ConvergenceWarning)
 
-name = "tmc2007"
+name = "scene"
 
 
 exp_scores = defaultdict(list)
@@ -117,7 +117,7 @@ for i in range(1):
             ##################################################################################################
             policy = Policy(n_in=n_features, n1=15, n2=30, n_out=n_labels).to(torch.float32).to(device)
             discr = T(n_features + 2 * n_labels).to(torch.float32).to(device)
-            opt_h = torch.optim.Adam(params=hnet.parameters(), lr=0.001)
+            opt_h = torch.optim.Adam(params=policy.parameters(), lr=0.001)
 
 
             train(max_epoch=50, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy,
