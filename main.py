@@ -117,10 +117,11 @@ for i in range(1):
             ##################################################################################################
             policy = Policy(n_in=n_features, n1=15, n2=30, n_out=n_labels).to(torch.float32).to(device)
             discr = T(n_features + 2 * n_labels).to(torch.float32).to(device)
+            opt_h = torch.optim.Adam(params=hnet.parameters(), lr=0.001)
 
 
-            train(max_epoch=0, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy,
-                  Dnet_xy=discr, steps_fgan=10, is_gumbel_hard=False, device=device)
+            train(max_epoch=50, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy,
+                  Dnet_xy=discr, steps_fgan=10, is_gumbel_hard=False, device=device, opt_h=opt_h)
 
             # evaluate NN
             policy = policy.cpu()
