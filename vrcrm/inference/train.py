@@ -11,8 +11,9 @@ from ..models import Policy, T
 def train(
         max_epoch: int, bandit_train_loader: DataLoader,
         fgan_loader: DataLoader, hnet: Policy, Dnet_xy: T,
-        steps_fgan: int, is_cuda: bool = False,
+        steps_fgan: int, device,
         is_gumbel_hard: bool = False) -> None:
+    is_cuda = device.type == "cuda"
 
     # make optimizers
     opt_h = torch.optim.Adam(params=hnet.parameters(), lr=0.001)
@@ -23,6 +24,11 @@ def train(
         for ele in bandit_train_loader:
             X, s_labels, s_log_prop, s_loss, y = ele
             y = y.long()
+            X = X.to(device)
+            s_labels = s_labels.to(device)
+            s_log_prop = s_labels.to(device)
+            s_loss = s_loss.to(device)
+            y = y.to(device)
 
             # Convert data to Torch Variable format
             idx = Variable(torch.LongTensor(y))
@@ -68,6 +74,10 @@ def train(
 
                     # dataset convertion
                     X, s_labels, s_log_prop, s_loss, y = ele
+                    s_labels = s_labels.to(device)
+                    s_log_prop = s_labels.to(device)
+                    s_loss = s_loss.to(device)
+                    y = y.to(device)
 
                     X = Variable(X.type(torch.FloatTensor), requires_grad=False)
                     s_labels = Variable(s_labels.type(torch.FloatTensor))

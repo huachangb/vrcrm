@@ -19,7 +19,7 @@ from sklearn.exceptions import ConvergenceWarning
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.simplefilter("ignore", category=ConvergenceWarning)
 
-name = "scene"
+name = "tmc2007"
 
 
 exp_scores = defaultdict(list)
@@ -29,6 +29,9 @@ EVAL_N_SAMPLES = 16
 VERBOSE = False
 SUPERVISED_VALIDATE_FRAC = 0.25
 LOGGER_DATA_FRAC = 0.05
+
+USING_CUDA = torch.cuda.is_available()
+device = torch.device("cuda" if USING_CUDA else "cpu")
 
 
 
@@ -57,7 +60,6 @@ for i in range(1):
             # create logger
             # loggerC is -1 in original code, but gets converted to 0.1
             logger = CRFLogger(n_labels=n_labels, C = 0.1, verbose = VERBOSE)
-            # logger = SanityLogger(n_labels=n_labels,  predict="none")
             logger.fit(features, labels)
 
             subsampled_dataset = DatasetReader.DatasetReader(copy_dataset = dataset, verbose = False)
@@ -71,6 +73,7 @@ for i in range(1):
             replayed_dataset.trainFeatures = features
             replayed_dataset.trainLabels = labels
             sampledLabels, sampledLogPropensity, sampledLoss = logger.generateLog(features, labels)
+            # sampledLabels, sampledLogPropensity, sampledLoss = logger_og.generateLog(replayed_dataset)
             bandit_dataset = DatasetReader.BanditDataset(dataset = replayed_dataset, verbose = VERBOSE)
             # print("Sampled labels")
             # print(sampledLabels)
@@ -85,6 +88,12 @@ for i in range(1):
             nn_train_data, nn_val_train_data = BanditDataset.from_poem(bandit_dataset)
             bandit_train_loader = DataLoader(nn_train_data, shuffle=True, batch_size=64)
             fgan_loader = DataLoader(nn_train_data, shuffle=True, batch_size=64)
+
+
+            eval_features = supervised_dataset.testFeatures.toarray().astype(np.float32)
+            eval_features = torch.from_numpy(eval_features)
+            eval_labels = supervised_dataset.testLabels
+            eval_labels = torch.from_numpy(eval_labels)
 
             ##################################################################################################
             #
@@ -106,13 +115,16 @@ for i in range(1):
             # NN-noreg, NN-soft, NN-hard
             #
             ##################################################################################################
-            policy = Policy(n_in=n_features, n1=15, n2=30, n_out=n_labels).to(torch.float32)
-            discr = T(n_features + 2 * n_labels).to(torch.float32)
+            policy = Policy(n_in=n_features, n1=15, n2=30, n_out=n_labels).to(torch.float32).to(device)
+            discr = T(n_features + 2 * n_labels).to(torch.float32).to(device)
 
 
-            train(max_epoch=0, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy, Dnet_xy=discr, steps_fgan=10)
+            train(max_epoch=0, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy,
+                  Dnet_xy=discr, steps_fgan=10, is_gumbel_hard=False, is_cuda=USING_CUDA)
 
             # evaluate NN
+            policy = policy.cpu()
+            discr = discr.cpu()
             exp_loss = expected_loss(policy, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
             maps = MAP_loss(policy, X=eval_features, labels=eval_labels)
             exp_scores["nn-noreg"].append(exp_loss)
@@ -128,11 +140,6 @@ for i in range(1):
             # train CRF
             crf = CRF(n_labels=n_labels, C=0.1, verbose=False)
             crf.fit(supervised_dataset.trainFeatures, supervised_dataset.trainLabels)
-
-            eval_features = supervised_dataset.testFeatures.toarray().astype(np.float32)
-            eval_features = torch.from_numpy(eval_features)
-            eval_labels = supervised_dataset.testLabels
-            eval_labels = torch.from_numpy(eval_labels)
 
             # evaluate CRF
             exp_loss = expected_loss(crf, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
@@ -204,6 +211,8 @@ for i in range(1):
             ok = True
         except ValueError as e:
             print("Invalid split, attempting again...")
+
+
 
 
 print(f"Results for {name}")
