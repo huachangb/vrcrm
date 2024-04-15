@@ -11,6 +11,7 @@ from vrcrm.models import Policy, T
 from vrcrm.models.CRF import CRF
 from vrcrm.models.logger import CRFLogger
 from vrcrm.inference.train import train
+from vrcrm.inference.train_2 import train2, algorithm_1
 from vrcrm.loss import expected_loss, MAP_loss
 
 import warnings
@@ -86,8 +87,8 @@ for i in range(1):
             bandit_dataset.createTrainValidateSplit(validateFrac = 0.25)
 
             nn_train_data, nn_val_train_data = BanditDataset.from_poem(bandit_dataset)
-            bandit_train_loader = DataLoader(nn_train_data, shuffle=True, batch_size=64)
-            fgan_loader = DataLoader(nn_train_data, shuffle=True, batch_size=64)
+            bandit_train_loader = DataLoader(nn_train_data, shuffle=True, batch_size=512)
+            fgan_loader = DataLoader(nn_train_data, shuffle=True, batch_size=512)
 
 
             eval_features = supervised_dataset.testFeatures.toarray().astype(np.float32)
@@ -201,61 +202,61 @@ for i in range(1):
             #
             ##################################################################################################
 
-            prm = PRMWrapper(bandit_dataset, n_iter = 1000, tol = 1e-6, minC = 0, maxC = -1, minV = -6, maxV = 0,
-                                                minClip = 0, maxClip = 0, estimator_type = 'Vanilla', verbose = VERBOSE,
-                                                parallel = None, smartStart = None)
-            prm.calibrateHyperParams()
-            prm.validate()
-            exp_loss = expected_loss(prm, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
-            maps = MAP_loss(prm, X=eval_features, labels=eval_labels)
-            exp_scores["prm"].append(exp_loss)
-            map_scores["prm"].append(maps)
-            exp_scores["prm-og"].append(prm.expectedTestLoss())
-            map_scores["prm-og"].append(prm.test())
-            prm.freeAuxiliaryMatrices()
-            del prm
+            # prm = PRMWrapper(bandit_dataset, n_iter = 1000, tol = 1e-6, minC = 0, maxC = -1, minV = -6, maxV = 0,
+            #                                     minClip = 0, maxClip = 0, estimator_type = 'Vanilla', verbose = VERBOSE,
+            #                                     parallel = None, smartStart = None)
+            # prm.calibrateHyperParams()
+            # prm.validate()
+            # exp_loss = expected_loss(prm, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
+            # maps = MAP_loss(prm, X=eval_features, labels=eval_labels)
+            # exp_scores["prm"].append(exp_loss)
+            # map_scores["prm"].append(maps)
+            # exp_scores["prm-og"].append(prm.expectedTestLoss())
+            # map_scores["prm-og"].append(prm.test())
+            # prm.freeAuxiliaryMatrices()
+            # del prm
 
-            erm = PRMWrapper(bandit_dataset, n_iter = 1000, tol = 1e-6, minC = 0, maxC = -1, minV = 0, maxV = -1,
-                                        minClip = 0, maxClip = 0, estimator_type = 'Vanilla', verbose = VERBOSE,
-                                        parallel = None, smartStart = None)
-            erm.calibrateHyperParams()
-            erm.validate()
-            exp_loss = expected_loss(erm, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
-            maps = MAP_loss(erm, X=eval_features, labels=eval_labels)
-            exp_scores["erm"].append(exp_loss)
-            map_scores["erm"].append(maps)
-            exp_scores["erm-og"].append(erm.expectedTestLoss())
-            map_scores["erm-og"].append(erm.test())
+            # erm = PRMWrapper(bandit_dataset, n_iter = 1000, tol = 1e-6, minC = 0, maxC = -1, minV = 0, maxV = -1,
+            #                             minClip = 0, maxClip = 0, estimator_type = 'Vanilla', verbose = VERBOSE,
+            #                             parallel = None, smartStart = None)
+            # erm.calibrateHyperParams()
+            # erm.validate()
+            # exp_loss = expected_loss(erm, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
+            # maps = MAP_loss(erm, X=eval_features, labels=eval_labels)
+            # exp_scores["erm"].append(exp_loss)
+            # map_scores["erm"].append(maps)
+            # exp_scores["erm-og"].append(erm.expectedTestLoss())
+            # map_scores["erm-og"].append(erm.test())
 
-            erm.freeAuxiliaryMatrices()
-            del erm
+            # erm.freeAuxiliaryMatrices()
+            # del erm
 
-            maj = PRMWrapper(bandit_dataset, n_iter = 1000, tol = 1e-6, minC = 0, maxC = -1, minV = -6, maxV = 0,
-                                        minClip = 0, maxClip = 0, estimator_type = 'Stochastic', verbose = VERBOSE,
-                                        parallel = None, smartStart = None)
-            maj.calibrateHyperParams()
-            maj.validate()
-            exp_loss = expected_loss(maj, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
-            maps = MAP_loss(maj, X=eval_features, labels=eval_labels)
-            exp_scores["maj"].append(exp_loss)
-            map_scores["maj"].append(maps)
-            exp_scores["maj-og"].append(maj.expectedTestLoss())
-            map_scores["maj-og"].append(maj.test())
+            # maj = PRMWrapper(bandit_dataset, n_iter = 1000, tol = 1e-6, minC = 0, maxC = -1, minV = -6, maxV = 0,
+            #                             minClip = 0, maxClip = 0, estimator_type = 'Stochastic', verbose = VERBOSE,
+            #                             parallel = None, smartStart = None)
+            # maj.calibrateHyperParams()
+            # maj.validate()
+            # exp_loss = expected_loss(maj, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
+            # maps = MAP_loss(maj, X=eval_features, labels=eval_labels)
+            # exp_scores["maj"].append(exp_loss)
+            # map_scores["maj"].append(maps)
+            # exp_scores["maj-og"].append(maj.expectedTestLoss())
+            # map_scores["maj-og"].append(maj.test())
 
-            maj.freeAuxiliaryMatrices()
-            del maj
+            # maj.freeAuxiliaryMatrices()
+            # del maj
 
-            majerm = PRMWrapper(bandit_dataset, n_iter = 1000, tol = 1e-6, minC = 0, maxC = -1, minV = 0, maxV = -1,
-                                        minClip = 0, maxClip = 0, estimator_type = 'Stochastic', verbose = VERBOSE,
-                                        parallel = None, smartStart = None)
-            majerm.calibrateHyperParams()
-            majerm.validate()
-            exp_loss = expected_loss(majerm, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
-            maps = MAP_loss(majerm, X=eval_features, labels=eval_labels)
-            exp_scores["majerm"].append(exp_loss)
-            map_scores["majerm"].append(maps)
-            exp_scores["majerm-og"].append(majerm.expectedTestLoss())
-            map_scores["majerm-pg"].append(majerm.test())
+            # majerm = PRMWrapper(bandit_dataset, n_iter = 1000, tol = 1e-6, minC = 0, maxC = -1, minV = 0, maxV = -1,
+            #                             minClip = 0, maxClip = 0, estimator_type = 'Stochastic', verbose = VERBOSE,
+            #                             parallel = None, smartStart = None)
+            # majerm.calibrateHyperParams()
+            # majerm.validate()
+            # exp_loss = expected_loss(majerm, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
+            # maps = MAP_loss(majerm, X=eval_features, labels=eval_labels)
+            # exp_scores["majerm"].append(exp_loss)
+            # map_scores["majerm"].append(maps)
+            # exp_scores["majerm-og"].append(majerm.expectedTestLoss())
+            # map_scores["majerm-pg"].append(majerm.test())
             ok = True
         except ValueError as e:
             print("Invalid split, attempting again...")
