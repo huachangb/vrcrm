@@ -110,14 +110,13 @@ for i in range(1):
             exp_scores["logger-og"].append(logger_og.crf.expectedTestLoss())
             map_scores["logger-og"].append(logger_og.crf.test())
 
-
             ##################################################################################################
             #
-            # NN-noreg, NN-soft, NN-hard
+            # NN veriyf
             #
             ##################################################################################################
             layers = dict(n_in=n_features, n1=15, n2=30, n_out=n_labels)
-            max_epochs=50
+            max_epochs = 50
             steps_fgan = 10
 
 
@@ -128,29 +127,14 @@ for i in range(1):
             opt_h2 = torch.optim.Adam(params=policy.parameters(), lr=0.001)
             opt_d = torch.optim.Adam(params=discr.parameters(), lr=0.01)
 
+            algorithm_1(steps_fgan=steps_fgan, fgan_loader=fgan_loader, device=device, hnet=Policy, is_gumbel_hard=False, is_cuda=device.type == "cuda", Dnet_xy=discr, opts=[opt_h, opt_h2, opt_d])
 
-            train(max_epoch=max_epochs, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy,
-                  Dnet_xy=discr, steps_fgan=0, is_gumbel_hard=False, device=device, opts=[opt_h, opt_h2, opt_d])
-
-            # evaluate NN
-            policy = policy.cpu()
-            discr = discr.cpu()
-            exp_loss = expected_loss(policy, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
-            maps = MAP_loss(policy, X=eval_features, labels=eval_labels)
-            exp_scores["nn-noreg"].append(exp_loss)
-            map_scores["nn-noreg"].append(maps)
-
-
-            # soft
-            policy = Policy(**layers).to(torch.float32).to(device)
-            discr = T(n_features + 2 * n_labels).to(torch.float32).to(device)
-            opt_h = torch.optim.Adam(params=policy.parameters(), lr=0.001)
-            opt_h2 = torch.optim.Adam(params=policy.parameters(), lr=0.001)
-            opt_d = torch.optim.Adam(params=discr.parameters(), lr=0.01)
-
-
-            train(max_epoch=max_epochs, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy,
-                  Dnet_xy=discr, steps_fgan=steps_fgan, is_gumbel_hard=False, device=device, opts=[opt_h, opt_h2, opt_d])
+            # algorithm_1(
+            #     steps
+            #     ,
+            #     max_epoch=max_epochs, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy,
+            #       Dnet_xy=discr, steps_fgan=0, is_gumbel_hard=False, device=device, opts=[opt_h, opt_h2, opt_d]
+            #       )
 
             # evaluate NN
             policy = policy.cpu()
@@ -160,24 +144,74 @@ for i in range(1):
             exp_scores["nn-noreg"].append(exp_loss)
             map_scores["nn-noreg"].append(maps)
 
-            # hard
-            policy = Policy(**layers).to(torch.float32).to(device)
-            discr = T(n_features + 2 * n_labels).to(torch.float32).to(device)
-            opt_h = torch.optim.Adam(params=policy.parameters(), lr=0.001)
-            opt_h2 = torch.optim.Adam(params=policy.parameters(), lr=0.001)
-            opt_d = torch.optim.Adam(params=discr.parameters(), lr=0.01)
+
+            ##################################################################################################
+            #
+            # NN-noreg, NN-soft, NN-hard
+            #
+            ##################################################################################################
+            # layers = dict(n_in=n_features, n1=15, n2=30, n_out=n_labels)
+            # max_epochs=50
+            # steps_fgan = 10
 
 
-            train(max_epoch=max_epochs, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy,
-                  Dnet_xy=discr, steps_fgan=steps_fgan, is_gumbel_hard=False, device=device, opts=[opt_h, opt_h2, opt_d])
+            # # no reg
+            # policy = Policy(**layers).to(torch.float32).to(device)
+            # discr = T(n_features + 2 * n_labels).to(torch.float32).to(device)
+            # opt_h = torch.optim.Adam(params=policy.parameters(), lr=0.001)
+            # opt_h2 = torch.optim.Adam(params=policy.parameters(), lr=0.001)
+            # opt_d = torch.optim.Adam(params=discr.parameters(), lr=0.01)
 
-            # evaluate NN
-            policy = policy.cpu()
-            discr = discr.cpu()
-            exp_loss = expected_loss(policy, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
-            maps = MAP_loss(policy, X=eval_features, labels=eval_labels)
-            exp_scores["nn-noreg"].append(exp_loss)
-            map_scores["nn-noreg"].append(maps)
+
+            # train(max_epoch=max_epochs, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy,
+            #       Dnet_xy=discr, steps_fgan=0, is_gumbel_hard=False, device=device, opts=[opt_h, opt_h2, opt_d])
+
+            # # evaluate NN
+            # policy = policy.cpu()
+            # discr = discr.cpu()
+            # exp_loss = expected_loss(policy, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
+            # maps = MAP_loss(policy, X=eval_features, labels=eval_labels)
+            # exp_scores["nn-noreg"].append(exp_loss)
+            # map_scores["nn-noreg"].append(maps)
+
+
+            # # soft
+            # policy = Policy(**layers).to(torch.float32).to(device)
+            # discr = T(n_features + 2 * n_labels).to(torch.float32).to(device)
+            # opt_h = torch.optim.Adam(params=policy.parameters(), lr=0.001)
+            # opt_h2 = torch.optim.Adam(params=policy.parameters(), lr=0.001)
+            # opt_d = torch.optim.Adam(params=discr.parameters(), lr=0.01)
+
+
+            # train(max_epoch=max_epochs, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy,
+            #       Dnet_xy=discr, steps_fgan=steps_fgan, is_gumbel_hard=False, device=device, opts=[opt_h, opt_h2, opt_d])
+
+            # # evaluate NN
+            # policy = policy.cpu()
+            # discr = discr.cpu()
+            # exp_loss = expected_loss(policy, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
+            # maps = MAP_loss(policy, X=eval_features, labels=eval_labels)
+            # exp_scores["nn-noreg"].append(exp_loss)
+            # map_scores["nn-noreg"].append(maps)
+
+            # # hard
+            # policy = Policy(**layers).to(torch.float32).to(device)
+            # discr = T(n_features + 2 * n_labels).to(torch.float32).to(device)
+            # opt_h = torch.optim.Adam(params=policy.parameters(), lr=0.001)
+            # opt_h2 = torch.optim.Adam(params=policy.parameters(), lr=0.001)
+            # opt_d = torch.optim.Adam(params=discr.parameters(), lr=0.01)
+
+
+            # train(max_epoch=max_epochs, bandit_train_loader=bandit_train_loader, fgan_loader=fgan_loader, hnet=policy,
+            #       Dnet_xy=discr, steps_fgan=steps_fgan, is_gumbel_hard=False, device=device, opts=[opt_h, opt_h2, opt_d])
+
+            # # evaluate NN
+            # policy = policy.cpu()
+            # discr = discr.cpu()
+            # exp_loss = expected_loss(policy, n_samples = EVAL_N_SAMPLES, X=eval_features, labels=eval_labels)
+            # maps = MAP_loss(policy, X=eval_features, labels=eval_labels)
+            # exp_scores["nn-noreg"].append(exp_loss)
+            # map_scores["nn-noreg"].append(maps)
 
 
             ##################################################################################################
