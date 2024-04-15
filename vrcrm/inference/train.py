@@ -32,6 +32,7 @@ def train(
             s_log_prop = s_log_prop.to(device)
             s_loss = s_loss.to(device)
             y = y.to(torch.int64).to(device)
+            idx = y
 
             # Convert data to Torch Variable format
             # idx = Variable(torch.LongTensor(y))
@@ -77,6 +78,7 @@ def train(
 
                     # dataset convertion
                     X, s_labels, s_log_prop, s_loss, y = ele
+                    X = X.to(torch.float32).to(device)
                     s_labels = s_labels.to(device)
                     s_log_prop = s_log_prop.to(device)
                     s_loss = s_loss.to(device)
@@ -98,7 +100,7 @@ def train(
                     D_fake = Dnet_xy(G_sample)
                     transformed_y = torch.cat((s_labels,1-s_labels),dim=1) # TODO: here
                     transformed_y = transformed_y.view(transformed_y.size(0),-1)
-                    transformed_y = torch.cat((transformed_y, X),dim=-1)
+                    transformed_y = torch.cat((transformed_y, X),dim=-1).to(torch.float32)
                     D_real = Dnet_xy(transformed_y)
 
                     D_loss = -(torch.mean(D_fake) - torch.mean(0.25 * D_real ** 2 + D_real))
